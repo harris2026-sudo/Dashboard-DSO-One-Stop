@@ -484,7 +484,7 @@
 
   <div class="tabs">
     <div class="tab active" data-view="overview">🏠 Overview</div>
-    <div class="tab" data-view="assetplant">🚚 Asset &amp; Plant</div>
+    <div class="tab" data-view="assetplant">📦 Stock Management</div>
     <div class="tab" data-view="pob">👷 POB</div>
     <div class="tab" data-view="harian">✅ Checklist Harian</div>
     <div class="tab" data-view="followup">🔄 Follow Up<span class="tab-badge" id="fuTabBadge" style="display:none;"></span></div>
@@ -498,7 +498,7 @@
   <div class="view active" id="view-overview">
     <div class="summary" style="grid-template-columns:repeat(4,1fr);">
       <div class="card clickable" id="ovCardUptime"><div class="num" id="ovUptimeNum">--%</div><div class="lab">System Uptime</div></div>
-      <div class="card clickable" id="ovCardFleet"><div class="num" id="ovFleetNum">--</div><div class="lab">Fleet Units</div></div>
+      <div class="card clickable" id="ovCardFleet"><div class="num" id="ovFleetNum">--</div><div class="lab">Kategori Stock</div></div>
       <div class="card clickable" id="ovCardChecklist"><div class="num" id="ovChecklistNum">--</div><div class="lab">Checklist Hari Ini</div></div>
       <div class="card clickable" id="ovCardOpenpoint"><div class="num" id="ovOpenpointNum">--</div><div class="lab">Open Point Aktif</div></div>
     </div>
@@ -508,19 +508,32 @@
     </div>
   </div>
 
-  <!-- ================= VIEW: ASSET & PLANT ================= -->
+  <!-- ================= VIEW: STOCK MANAGEMENT ================= -->
   <div class="view" id="view-assetplant">
     <div class="category">
-      <div class="category-head"><span>🚚 Real-Time Asset Fleet Status</span></div>
+      <div class="category-head"><span>📦 Stock Management — Part WIM (uji coba)</span></div>
       <div class="category-body" style="padding:12px 14px;">
         <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
           <thead><tr style="text-align:left;color:#667;font-size:10.5px;text-transform:uppercase;">
-            <th style="padding:6px 4px;">Kategori</th><th>Total</th><th>Aktif</th><th>Status</th><th></th>
+            <th style="padding:6px 4px;">Kategori</th><th>Real</th><th>Dummy</th><th>Status</th><th style="text-align:right;">Aksi</th>
           </tr></thead>
           <tbody id="apBody"></tbody>
         </table>
-        <div class="add-task-wrap" style="padding:10px 0 0;"><button class="add-task-btn" id="apAddBtn">+ Tambah kategori aset</button></div>
+        <div class="add-task-wrap" style="padding:10px 0 0;"><button class="add-task-btn" id="apAddBtn">+ Tambah kategori part</button></div>
       </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="stockModalOverlay">
+    <div class="modal-box" style="max-width:480px;">
+      <button type="button" class="modal-close-x" id="stockModalCloseBtn" title="Tutup">✕</button>
+      <h3 id="stockModalTitle">Detail Kategori</h3>
+      <div style="display:flex;gap:6px;margin-bottom:12px;">
+        <button type="button" class="stock-subtab active" data-sub="riwayat" style="padding:6px 12px;border-radius:999px;font-size:11px;font-weight:bold;border:none;cursor:pointer;background:var(--accent);color:#fff;">Riwayat Pergantian</button>
+        <button type="button" class="stock-subtab" data-sub="serial" style="padding:6px 12px;border-radius:999px;font-size:11px;font-weight:bold;border:none;cursor:pointer;background:var(--hilite);color:var(--navy);">Serial Number</button>
+      </div>
+      <div id="stockSubRiwayat"></div>
+      <div id="stockSubSerial" style="display:none;"></div>
     </div>
   </div>
 
@@ -2391,18 +2404,41 @@ document.querySelectorAll('.tab').forEach(tab => {
   };
 });
 
-/* ================= DSO HUB: OVERVIEW / ASSET & PLANT / POB ================= */
+/* ================= DSO HUB: OVERVIEW / STOCK MANAGEMENT / POB ================= */
 const DSO_AVAIL_KEY = 'dso:availability';
-const DSO_ASSETS_KEY = 'dso:assets';
+const DSO_ASSETS_KEY = 'dso:stock-wim';
 const DSO_POB_KEY = 'dso:pob';
 
 function dsoDefaults(){
   return {
     availability: { uptime: 99.85 },
     assets: [
-      {cat:'Haul Trucks', total:50, active:45, status:'green', label:'Normal'},
-      {cat:'Excavators', total:15, active:12, status:'yellow', label:'3 Maint.'},
-      {cat:'Processing Plant', total:1, active:1, status:'green', label:'Running'}
+      {cat:'Load Cell', real:4, dummy:6, status:'green', label:'Ready',
+        replacements:[
+          {tanggal:'2026-05-22', lane:'Lane 3', keterangan:'Pergantian Loadcell Intercomp nomor 1 dan diganti keseluruhan dengan Loadcell Bosche'},
+          {tanggal:'2026-05-26', lane:'Lane 3', keterangan:'Pergantian Loadcell Bosche dengan Intercomp'},
+          {tanggal:'2026-05-28', lane:'Lane 1', keterangan:'Pergantian Loadcell Intercomp nomor 3 dan diganti keseluruhan dengan Loadcell Bosche'}
+        ],
+        serial:[
+          {nama:'LOADCELL INTERCOMP', merk:'INTERCOMP Loadcell double ended shear beam', sn:'91066926', kondisi:'Rusak', lokasi:'Office VGT'},
+          {nama:'LOADCELL INTERCOMP', merk:'INTERCOMP Loadcell double ended shear beam', sn:'9106930', kondisi:'Dummy', lokasi:'Office VGT'},
+          {nama:'LOADCELL INTERCOMP', merk:'INTERCOMP Loadcell double ended shear beam', sn:'91066931', kondisi:'Rusak', lokasi:'Office VGT'}
+        ]},
+      {cat:'Saddle', real:0, dummy:6, status:'red', label:'Out of Stock',
+        replacements:[
+          {tanggal:'2025-07-27', lane:'Lane 1', keterangan:'Pergantian sadle Load Cell 1 yang aus di Lane 1'},
+          {tanggal:'2025-08-02', lane:'Lane 1', keterangan:'Pergantian sadle Load Cell 4 yang aus di Lane 1'},
+          {tanggal:'2025-10-27', lane:'Lane 1', keterangan:'Pergantian sadle Load Cell 2 yang aus di Lane 1'}
+        ],
+        serial:[]},
+      {cat:'RFID Reader', real:0, dummy:0, status:'red', label:'Out of Stock',
+        replacements:[
+          {tanggal:'2025-12-09', lane:'Lane 3', keterangan:'Pergantian RFID Reader HS Lane 3'},
+          {tanggal:'2026-07-17', lane:'Lane 2', keterangan:'Pergantian RFID Reader HS Lane 2 karena kabel connector putus'}
+        ],
+        serial:[
+          {nama:'Electron UHF Fixed Reader antenna 9dBi / 12dBi', merk:'Electron HW-VX6346KL V2', sn:'-', kondisi:'Bekas', lokasi:'Office VGT'}
+        ]}
     ],
     pob: { employees: 1215, contractors: 627, musterSafe: true }
   };
@@ -2426,17 +2462,14 @@ async function renderOverview(){
   document.getElementById('ovUptimeNum').textContent = avail.uptime + '%';
   document.getElementById('ovUptimeLabel').textContent = avail.uptime + '%';
   document.getElementById('ovUptimeBar').style.width = avail.uptime + '%';
-  const totalUnits = assets.reduce((s,a)=>s+Number(a.total),0);
-  document.getElementById('ovFleetNum').textContent = totalUnits;
+  document.getElementById('ovFleetNum').textContent = assets.length;
 
-  // checklist hari ini: hitung dari data checklist harian yang sudah ada di app ini
   try{
     const items = document.querySelectorAll('#dailyList .task-item');
     const done = document.querySelectorAll('#dailyList .task-item.done');
     document.getElementById('ovChecklistNum').textContent = (done.length||0) + '/' + (items.length||0);
   }catch(e){ document.getElementById('ovChecklistNum').textContent = '-'; }
 
-  // open point aktif: hitung dari data open point yang sudah ada di app ini
   try{
     if(typeof openPointData !== 'undefined' && Array.isArray(openPointData)){
       const aktif = openPointData.filter(o => o.status !== 'Selesai' && o.status !== 'Closed').length;
@@ -2452,6 +2485,53 @@ async function renderOverview(){
 }
 
 const chipCycleDso = ['green','yellow','blue','red','grey','gold'];
+
+function openStockModal(assets, idx){
+  const item = assets[idx];
+  document.getElementById('stockModalTitle').textContent = item.cat;
+  const riwayatEl = document.getElementById('stockSubRiwayat');
+  const serialEl = document.getElementById('stockSubSerial');
+  if(!item.replacements || !item.replacements.length){
+    riwayatEl.innerHTML = '<p style="font-size:12px;color:#667;">Belum ada riwayat pergantian tercatat.</p>';
+  }else{
+    riwayatEl.innerHTML = '<div style="border-left:2px solid var(--accent);padding-left:12px;">' +
+      item.replacements.map(r => `
+        <div style="margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:bold;color:var(--navy);">${r.tanggal} · ${r.lane||'-'}</div>
+          <div style="font-size:11.5px;color:#556;">${r.keterangan||'-'}</div>
+        </div>`).join('') + '</div>';
+  }
+  if(!item.serial || !item.serial.length){
+    serialEl.innerHTML = '<p style="font-size:12px;color:#667;">Belum ada data serial number tercatat.</p>';
+  }else{
+    serialEl.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:11.5px;">' +
+      '<thead><tr style="text-align:left;color:#667;font-size:10px;text-transform:uppercase;"><th style="padding:4px 2px;">Nama</th><th>Merk/Model</th><th>SN</th><th>Kondisi</th></tr></thead><tbody>' +
+      item.serial.map(s => `<tr><td style="padding:4px 2px;">${s.nama}</td><td>${s.merk}</td><td>${s.sn}</td><td>${s.kondisi}</td></tr>`).join('') +
+      '</tbody></table>';
+  }
+  document.querySelectorAll('.stock-subtab').forEach(b => {
+    b.classList.toggle('active', b.dataset.sub === 'riwayat');
+    b.style.background = b.dataset.sub === 'riwayat' ? 'var(--accent)' : 'var(--hilite)';
+    b.style.color = b.dataset.sub === 'riwayat' ? '#fff' : 'var(--navy)';
+  });
+  riwayatEl.style.display = 'block';
+  serialEl.style.display = 'none';
+  document.getElementById('stockModalOverlay').classList.add('active');
+}
+document.querySelectorAll('.stock-subtab').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.stock-subtab').forEach(b => {
+      b.classList.toggle('active', b === btn);
+      b.style.background = b === btn ? 'var(--accent)' : 'var(--hilite)';
+      b.style.color = b === btn ? '#fff' : 'var(--navy)';
+    });
+    document.getElementById('stockSubRiwayat').style.display = btn.dataset.sub === 'riwayat' ? 'block' : 'none';
+    document.getElementById('stockSubSerial').style.display = btn.dataset.sub === 'serial' ? 'block' : 'none';
+  };
+});
+document.getElementById('stockModalCloseBtn').onclick = () => document.getElementById('stockModalOverlay').classList.remove('active');
+document.getElementById('stockModalOverlay').onclick = (e) => { if(e.target.id === 'stockModalOverlay') e.currentTarget.classList.remove('active'); };
+
 async function renderAssetPlant(){
   const assets = await dsoLoad(DSO_ASSETS_KEY, dsoDefaults().assets);
   const body = document.getElementById('apBody');
@@ -2459,21 +2539,25 @@ async function renderAssetPlant(){
   assets.forEach((a,i)=>{
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td contenteditable="true" style="padding:6px 4px;">${a.cat}</td>
-      <td contenteditable="true" style="padding:6px 4px;">${a.total}</td>
-      <td contenteditable="true" style="padding:6px 4px;">${a.active}</td>
+      <td style="padding:6px 4px;cursor:pointer;color:var(--navy);font-weight:bold;" class="ap-open" data-idx="${i}">${a.cat}</td>
+      <td contenteditable="true" style="padding:6px 4px;">${a.real}</td>
+      <td contenteditable="true" style="padding:6px 4px;">${a.dummy}</td>
       <td style="padding:6px 4px;"><span style="padding:3px 10px;border-radius:999px;font-size:10.5px;font-weight:bold;cursor:pointer;background:var(--${a.status}-bg);color:var(--${a.status}-fg);" data-idx="${i}" class="ap-chip">${a.label}</span></td>
-      <td style="padding:6px 4px;"><button data-idx="${i}" class="ap-del" style="border:none;background:var(--red-bg);color:var(--red-fg);width:22px;height:22px;border-radius:6px;cursor:pointer;">✕</button></td>`;
+      <td style="padding:6px 4px;text-align:right;">
+        <button data-idx="${i}" class="ap-edit" title="Edit nama" style="border:none;background:var(--hilite);color:var(--navy);width:22px;height:22px;border-radius:6px;cursor:pointer;margin-right:4px;">✎</button>
+        <button data-idx="${i}" class="ap-del" title="Hapus" style="border:none;background:var(--red-bg);color:var(--red-fg);width:22px;height:22px;border-radius:6px;cursor:pointer;">✕</button>
+      </td>`;
     body.appendChild(tr);
     tr.querySelectorAll('td[contenteditable]').forEach((td, ci) => {
       td.onblur = async () => {
-        const keys = ['cat','total','active'];
+        const keys = ['real','dummy'];
         const k = keys[ci];
-        assets[i][k] = (k==='total'||k==='active') ? Number(td.textContent)||0 : td.textContent;
+        assets[i][k] = Number(td.textContent)||0;
         await dsoSave(DSO_ASSETS_KEY, assets);
       };
     });
   });
+  body.querySelectorAll('.ap-open').forEach(el => { el.onclick = () => openStockModal(assets, Number(el.dataset.idx)); });
   body.querySelectorAll('.ap-chip').forEach(chip => {
     chip.onclick = async () => {
       const i = Number(chip.dataset.idx);
@@ -2484,15 +2568,29 @@ async function renderAssetPlant(){
       renderAssetPlant();
     };
   });
+  body.querySelectorAll('.ap-edit').forEach(btn => {
+    btn.onclick = async () => {
+      const i = Number(btn.dataset.idx);
+      const namaBaru = prompt('Ubah nama kategori:', assets[i].cat);
+      if(namaBaru && namaBaru.trim()){
+        assets[i].cat = namaBaru.trim();
+        await dsoSave(DSO_ASSETS_KEY, assets);
+        renderAssetPlant();
+      }
+    };
+  });
   body.querySelectorAll('.ap-del').forEach(btn => {
     btn.onclick = async () => {
+      if(!confirm('Hapus kategori "' + assets[Number(btn.dataset.idx)].cat + '"?')) return;
       assets.splice(Number(btn.dataset.idx),1);
       await dsoSave(DSO_ASSETS_KEY, assets);
       renderAssetPlant();
     };
   });
   document.getElementById('apAddBtn').onclick = async () => {
-    assets.push({cat:'Kategori Baru', total:0, active:0, status:'grey', label:'Belum diatur'});
+    const nama = prompt('Nama kategori part baru:');
+    if(!nama || !nama.trim()) return;
+    assets.push({cat:nama.trim(), real:0, dummy:0, status:'grey', label:'Belum diatur', replacements:[], serial:[]});
     await dsoSave(DSO_ASSETS_KEY, assets);
     renderAssetPlant();
   };
